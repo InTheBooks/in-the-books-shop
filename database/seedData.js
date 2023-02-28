@@ -4,6 +4,14 @@ const { createBook, getAllBooks, getBookById } = require("./books");
 const { createAuthor, getAuthorById } = require("./author");
 const { createBookTag } = require("./tags")
 const {createUser, updateUser, getUser, getUserByEmail, getAllUsers } = require("./users")
+const {createCart,
+    getCartById,
+    getCartByUserId,
+    getAllCarts,
+    destroyCart,
+    addToCart,
+    removeFromCart,
+    updateCart} = require ("./editCart")
 
 async function dropTables() {
   try {
@@ -11,9 +19,10 @@ async function dropTables() {
     await client.query(`
     DROP TABLE IF EXISTS book_tags;
     DROP TABLE IF EXISTS tags;
-    DROP TABLE IF EXISTS books;
+    DROP TABLE IF EXISTS books CASCADE;
     DROP TABLE IF EXISTS author;
-    DROP TABLE IF EXISTS users;
+    DROP TABLE IF EXISTS users CASCADE;
+    DROP TABLE IF EXISTS cart;
     `);
     console.log("Tables dropped");
   } catch (error) {
@@ -54,8 +63,8 @@ async function createTables() {
             "bookId" INTEGER REFERENCES books(id),
             "tagId" INTEGER REFERENCES tags(id), 
             UNIQUE ("bookId", "tagId")
-        );  
-        
+        );
+
         CREATE TABLE users (
             id SERIAL PRIMARY KEY,
             email VARCHAR(255),
@@ -64,6 +73,13 @@ async function createTables() {
             "phoneNumber" VARCHAR (255),
             "isAdmin" BOOLEAN DEFAULT false
         );
+        
+        CREATE TABLE cart (
+            id SERIAL PRIMARY KEY,
+            "userId"  VARCHAR(255),
+            "productIds" VARCHAR(255)
+        
+          );
         `);
     console.log("Finished building tables");
   } catch (error) {
@@ -98,7 +114,6 @@ async function seedAuthors() {
     throw error;
   }
 }
-
 
 async function createInitialUsers() {
     try {
@@ -193,6 +208,20 @@ console.log("Tags Seeded!")
         throw error;
     }
 }
+async function createInitialCart(){
+    try {
+        console.log('Starting to create cart..."')
+        const cart1= await createCart({
+            userId: faker.datatype.number(),
+            productIds: faker.company.name()
+             
+        });
+        console.log("---INITIAL CART---", cart1)
+    }catch (error) {
+        console.log("Error creating cart");
+        throw (error);
+    }
+}
 
 async function rebuildDB() {
   try {
@@ -206,6 +235,7 @@ async function rebuildDB() {
     await getAllBooks();
     await getBookById(20);
     await createInitialUsers();
+    await createInitialCart();
   } catch (error) {
     console.log("error during rebuildDB ");
     throw error;
